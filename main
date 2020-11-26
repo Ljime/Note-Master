@@ -1,0 +1,278 @@
+##
+# Creates a note hitting game
+
+
+# Import a library of functions called 'pygame'
+import pygame
+import random
+
+# Initialize the game engine
+pygame.init()
+
+# Define some colors
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+
+# Set the height and width of the screen
+size = (1200, 800)
+screen = pygame.display.set_mode(size)
+
+# Define variables
+done = False
+dead = False
+health_List = []
+finish = False
+noteTimer = 100
+playerY = 600
+playerSpeed = 0
+playerList = pygame.sprite.Group()
+noteList = pygame.sprite.Group()
+note_hit_list = []
+health_count = 3
+gameScore = 0
+songTimer = 0
+stamina = 200
+
+# Set name for program
+pygame.display.set_caption("Note Master")
+
+# Creates the note class
+class Note(pygame.sprite.Sprite):
+
+    # Define attributes for the class
+    def __init__(self):
+        super().__init__()
+        self.y = random.randint(50,625)
+        self.x = 1200
+        self.xchange = random.randint(-5,-2)
+        # Image obtained from https://www.iconfinder.com/icons/3139934/double_music_notes_music_music_note_music_notes_musical_notes_sound_icon
+        self.image = pygame.image.load("rsz_music_note1.png").convert()
+        self.image.set_colorkey(WHITE)
+        self.rect = self.image.get_rect(topleft=(self.x, self.y))
+
+    # Function for drawing notes
+    def drawNote(self,screen):
+        self.rect = self.image.get_rect(topleft=(self.x, self.y))
+        screen.blit(self.image, self.rect)
+
+    # Function for moving notes
+    def moveNote(self):
+        self.x += self.xchange
+
+# Creates the player class
+class Player(pygame.sprite.Sprite):
+
+    # Define attributes of the class
+    def __init__(self):
+        super().__init__()
+        self.y = 600
+        self.ychange = 0
+
+        # Image obtained from https://opengameart.org/content/man-walking-animation
+        self.image = pygame.image.load("hatman.png").convert()
+        self.image.set_colorkey(WHITE)
+
+    # Function for drawing player
+    def playerDraw(self,screen):
+         # Get dimensions of the spritee
+        self.rect = self.image.get_rect(topleft=(200,self.y))
+        screen.blit(self.image, self.rect)
+
+    # Function for moving player
+    def playerMove(self):
+        self.y += self.ychange
+
+        # Check for boundaries for player
+        if playerObject.y <= 0:
+            playerObject.y = 0
+        elif playerObject.y >= 720:
+            playerObject.y = 720
+
+
+# Creates the class health
+class Health(pygame.sprite.Sprite):
+
+    # Define attributes for the class
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load("rsz_heart.PNG").convert()
+        self.image.set_colorkey(WHITE)
+
+# Creates the class hitbox
+class Hitbox(pygame.sprite.Sprite):
+
+    # Define attributes of the hit box
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.Surface((0,1200))
+        self.rect = self.image.get_rect(topleft=(0,0))
+
+
+# Function for note and player collison
+def checkPlayerCollison(playerObject,noteList,score):
+    # Check if any notes hit the player and deletes the notes and add them to a list
+    note_hit_list = pygame.sprite.spritecollide(playerObject, noteList, True)
+
+    # Increases score for each collison
+    for hit in note_hit_list:
+        score += 1
+        soundEffect.play()
+
+    return score
+
+# Function for checking collison for notes passing player
+def checkHitboxCollison(hitbox,notelist,health_count):
+
+    # Checks for collison for notes and behind the player and removes them
+    note_hit_edge_list = pygame.sprite.spritecollide(hitbox, noteList, True)
+
+    # Lower health whenever note passes player
+    for notes in note_hit_edge_list:
+        health_count -= 1
+
+    return health_count
+
+# Function for drawing health
+def healthCheck(health_count):
+    dead = False
+    # Draw number of hearts depending on health
+    if health_count == 3:
+        screen.blit(health.image, (5,5))
+        screen.blit(health.image, (150,5))
+        screen.blit(health.image, (75,5))
+    elif health_count == 2:
+        screen.blit(health.image, (5,5))
+        screen.blit(health.image, (75,5))
+    elif health_count == 1:
+        screen.blit(health.image, (5,5))
+    else:
+        dead = True
+
+    return dead
+
+# Function for drawing score
+def drawScore():
+    score_text = font.render("Score: " + str(gameScore), True, BLACK)
+    screen.blit(score_text, [1100,0])
+
+# Function for drawing Stamina bAR
+def drawStamina(stamina):
+    pygame.draw.rect(screen,WHITE,(0,750,stamina,50))
+
+# Function for Increasing stamina bar
+def increaseStamina(stamina):
+    stamina += 1
+
+    return stamina
+
+# Function for Decreasing Stamina bar
+def decreaseStamina(stamina):
+    stamina += -2
+
+    return stamina
+
+# Loop until the user clicks the close button.
+clock = pygame.time.Clock()
+
+# Upload background image, received from https://wallpaperstock.net/only-winter-snow-wallpapers_w1374.html
+background_image = pygame.image.load("resizedsnowbackground.jpg").convert()
+
+# Upload song, received from http://ccmixter.org/content/airtone/airtone_-_reCreation.mp3
+song = pygame.mixer.Sound("reCreation.ogg")
+
+# Upload effect, received from https://www.zapsplat.com/sound-effect-category/drums-and-percussion/page/3/
+soundEffect = pygame.mixer.Sound("trianglesoundeffect.ogg")
+
+# Creates font for score
+font = pygame.font.SysFont('Calibri', 25, True, False)
+
+# Creates Objects from classses
+hitbox = Hitbox()
+playerObject = Player()
+playerList.add(playerObject)
+health = Health()
+
+# Loop as long as done == False
+while not done:
+
+    for event in pygame.event.get():  # User did something
+        if event.type == pygame.QUIT:  # If user clicked close
+            exit()            # Flag that we are done so we exit this loop
+
+    # Clear the screen and set the screen background
+    screen.fill(GREEN)
+    screen.blit(background_image, [0,0])
+
+    # Checks for inputs/releases from user and moves player
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_UP:
+            playerObject.ychange = -5
+        elif event.key == pygame.K_DOWN:
+            playerObject.ychange = 5
+    elif event.type == pygame.KEYUP:
+        if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+            playerObject.ychange = 0
+            # Increase stamina if the max hasn't been reached
+            if stamina < 300:
+                stamina = increaseStamina(stamina)
+
+    # If user has enough stamina check for dash
+    if stamina > 0:
+        # Checks for dash input for user and increases speed of player
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                playerObject.ychange = playerObject.ychange*1.05
+                stamina = decreaseStamina(stamina)
+
+    # Play song and loop when song ends
+    if songTimer <=0:
+        song.play()
+        songTimer = 13255
+
+    # Timer for song looping
+    songTimer = songTimer - 1
+
+    # Timer for note spawning and moving
+    noteTimer = noteTimer - 1
+
+    # Creates a new note object and add it to a list
+    if noteTimer <= 0:
+        newNote = Note()
+        noteList.add(newNote)
+        noteTimer = 50
+
+    # Draw and move each note in list
+    for note in noteList:
+        note.drawNote(screen)
+        note.moveNote()
+
+    # Draw and move player
+    for player in playerList:
+        player.playerDraw(screen)
+        player.playerMove()
+
+    # Checks for collison for player and notes
+    gameScore = checkPlayerCollison(playerObject, noteList, gameScore)
+
+    # Check for collisons for notes behind player
+    health_count = checkHitboxCollison(hitbox,noteList,health_count)
+
+    # Checks if player health is zero
+    done = healthCheck(health_count)
+
+    # Updates and draw score
+    drawScore()
+    drawStamina(stamina)
+
+    # This MUST happen after all the other drawing commands.
+    pygame.display.flip()
+
+    # This limits the while loop to a max of 60 times per second.
+    clock.tick(60)
+
+# Be IDLE friendly
+print("Your score is "+ str(gameScore))
+pygame.quit()
